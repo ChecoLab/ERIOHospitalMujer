@@ -1,0 +1,16 @@
+{
+  "name": "Código ERIO",
+  "short_name": "ERIO",
+  "start_url": ".",
+  "display": "standalone",
+  "background_color": "#db2777",
+  "theme_color": "#db2777",
+  "description": "Alerta de Respuesta Inmediata Obstétrica - Hospital de la Mujer",
+  "icons": [
+    {
+      "src": "https://cdn-icons-png.flaticon.com/512/3063/3063823.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    }
+  ]
+}

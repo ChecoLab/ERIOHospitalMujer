@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Código ERIO - Hospital de la Mujer</title>
+    
+    <!-- Iconos y Manifest para instalar en celular -->
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#db2777">
+    <link rel="apple-touch-icon" href="icon-192.png">
+
+    <!-- Estilos -->
+    <link rel="stylesheet" href="styles.css">
+
+    <!-- FIREBASE (Servicios en la nube) -->
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+</head>
+<body>
+
+    <!-- VISTA 1: SETUP (Configuración Inteligente) -->
+    <div id="view-setup" class="flex flex-col items-center justify-center h-full p-4">
+        <div class="card text-center">
+            <h1 class="text-primary title-lg">Hospital de la Mujer</h1>
+            <p class="text-sm mb-6 text-gray">Configuración Inicial</p>
+            
+            <div class="text-left mb-2">
+                <p class="text-xs font-bold mb-1">Pega aquí el código de Firebase:</p>
+                <p class="text-[10px] text-gray mb-2">Copia y pega directo de la consola.</p>
+            </div>
+            
+            <textarea id="firebase-config-input" placeholder='{ apiKey: "..." }' class="code-input"></textarea>
+            
+            <button onclick="smartSaveConfig()" class="btn-dark">Guardar y Conectar</button>
+            <p id="setup-error" class="text-xs text-red-600 mt-2 font-bold hidden">Error: Formato no reconocido.</p>
+        </div>
+    </div>
+
+    <!-- VISTA 2: REGISTRO -->
+    <div id="view-register" class="hidden flex flex-col items-center justify-center h-full p-4 bg-white">
+        <div class="card border-top-primary">
+            <h2 class="text-center font-bold mb-6 text-xl text-dark">Identificación</h2>
+            
+            <label class="label-input">Nombre Completo</label>
+            <input type="text" id="reg-name" placeholder="Ej. Dr. Sergio Ramos">
+            
+            <label class="label-input">Rol / Área</label>
+            <select id="reg-role">
+                <option>Ginecólogo/a</option>
+                <option>Anestesiólogo/a</option>
+                <option>Intensivista</option>
+                <option>Pediatra/Neonatólogo</option>
+                <option>Enfermería</option>
+                <option>Trabajo Social</option>
+                <option>Camillero</option>
+                <option>Laboratorio</option>
+                <option>Administrativo</option>
+                <option>Estudiante/Residente</option>
+                <option>Jefe de Enseñanza</option>
+            </select>
+            <button onclick="registerUser()" class="btn-primary mt-4">Ingresar al Sistema</button>
+        </div>
+    </div>
+
+    <!-- VISTA 3: DASHBOARD -->
+    <div id="view-dashboard" class="hidden flex flex-col h-full bg-gray-50">
+        <div class="header shadow sticky">
+            <div>
+                <h3 class="header-title">Código ERIO</h3>
+                <span id="user-display" class="header-subtitle">...</span>
+            </div>
+            <button onclick="resetApp()" class="btn-logout">SALIR</button>
+        </div>
+
+        <div class="p-4 flex-col flex w-full container-center">
+            <!-- Panel de Activación -->
+            <div class="card mb-6 border-danger-light">
+                <h3 class="activation-title">
+                    ⚠️ ACTIVAR ALERTA
+                </h3>
+                
+                <label class="label-input">Ubicación</label>
+                <select id="alert-location" class="bg-red-50">
+                    <option value="">-- Seleccionar --</option>
+                    <option>Tococirugía</option>
+                    <option>Urgencias</option>
+                    <option>Sala 1</option>
+                    <option>Sala 2</option>
+                    <option>Sala 3</option>
+                    <option>Sala 4</option>
+                    <option>Sala 1 Alto riesgo</option>
+                    <option>Sala 2 Alto riesgo</option>
+                    <option>Monitor</option>
+                    <option>Terapia Intensiva</option>
+                    <option>Consulta</option>
+                    <option>Enseñanza</option>
+                    <option>Área de almacén</option>
+                    <option>Posada AME</option>
+                </select>
+
+                <label class="label-input">Situación (Breve)</label>
+                <textarea id="alert-situation" rows="2" placeholder="Ej. Eclampsia severa, Choque hipovolémico..." class="bg-red-50"></textarea>
+                
+                <button onclick="activateAlert()" class="btn-danger shadow-lg">🚨 ACTIVAR CÓDIGO ERIO</button>
+            </div>
+
+            <h4 class="history-title">Historial Reciente</h4>
+            <div id="history-list" class="flex flex-col gap-3"></div>
+        </div>
+    </div>
+
+    <!-- VISTA 4: ALERTA ROJA (MODO PÁNICO) -->
+    <div id="view-alert" class="alert-screen hidden flex flex-col">
+        <div class="flex justify-between items-center mb-6">
+            <h1 class="text-3xl font-black m-0 tracking-tighter">CÓDIGO ERIO</h1>
+            <div class="bg-black bg-opacity-25 px-2 py-1 rounded text-xs font-mono font-bold">ACTIVO AHORA</div>
+        </div>
+
+        <div class="bg-white text-dark rounded-xl p-6 shadow-2xl mb-6">
+            <p class="text-xs font-bold text-danger mb-1 uppercase">Emergencia Obstétrica</p>
+            <h2 id="panic-situation" class="text-2xl font-bold m-0 mb-4 leading-tight">...</h2>
+            
+            <div class="flex pt-4 border-t border-gray-100">
+                <div class="w-full">
+                    <span class="text-gray text-[10px] font-bold uppercase block">Ubicación</span>
+                    <span id="panic-location" class="font-bold text-lg text-primary">...</span>
+                </div>
+                <div class="w-full">
+                    <span class="text-gray text-[10px] font-bold uppercase block">Activó</span>
+                    <span id="panic-activator" class="font-bold text-sm">...</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="bg-black bg-opacity-20 rounded-xl p-4 flex-1 mb-6 overflow-y-auto backdrop-blur-sm">
+            <h3 class="text-sm font-bold mb-2 text-white opacity-90">Personal Respondiendo (<span id="responders-count">0</span>)</h3>
+            <div id="responders-list" class="flex flex-col gap-2"></div>
+        </div>
+
+        <div class="mt-auto">
+            <button id="btn-respond" onclick="respondToAlert()" class="btn-white text-danger font-black text-xl mb-4 py-4 shadow-lg transform active:scale-95 transition-all">
+                VOY EN CAMINO 🏃🏻‍♂️
+            </button>
+            
+            <div id="response-confirmed" class="hidden btn-confirmed">
+                ✅ Asistencia Confirmada
+            </div>
+            
+            <div class="bg-white p-3 rounded-lg text-dark flex flex-col gap-2 shadow-lg">
+                <label class="text-[10px] font-bold text-gray uppercase">Cierre de Código</label>
+                <div class="flex gap-2">
+                    <input type="text" id="final-report" placeholder="Reporte de desenlace..." class="input-report">
+                    <button onclick="deactivateAlert()" class="btn-dark btn-sm">FINALIZAR</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- LÓGICA -->
+    <script src="app.js"></script>
+</body>
+</html>
